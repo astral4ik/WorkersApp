@@ -1,4 +1,4 @@
-package itmo.lab.storage;
+package itmo.lab.server.storage;
 
 import itmo.lab.WorkersCollection;
 import itmo.lab.data.Worker;

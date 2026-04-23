@@ -1,0 +1,289 @@
+Разработай клиент-серверное Java-приложение на основе уже существующего консольного проекта управления коллекцией Worker.
+
+ЦЕЛЬ:
+Разделить приложение на клиент (ввод, формирование и отправка команд) и сервер (выполнение команд, управление коллекцией, работа с файлом).
+
+АРХИТЕКТУРА:
+1. Разделить проект на 3 модуля:
+
+COMMON (общий код):
+- все классы модели: Worker, Organization, Coordinates, Address, Location, Position, Status
+- Request
+- Response
+- классы аргументов (DTO)
+
+CLIENT:
+- Client (точка входа)
+- Console (оставить как есть)
+- WorkerInputHelper (оставить как есть)
+
+SERVER:
+- Server
+- RequestHandler
+- CommandManager / Map<String, Command>
+- все команды (InsertCommand, UpdateCommand и т.д.)
+- WorkersCollection
+- XmlFileStorage
+
+ОБМЕН ДАННЫМИ:
+- Протокол: TCP
+- Клиент: Socket + ObjectOutputStream/ObjectInputStream
+- Сервер: ServerSocketChannel (неблокирующий режим)
+- Передача данных только через Serializable
+
+ОБЪЕКТЫ ПЕРЕДАЧИ:
+
+Request:
+--------------------------------
+import java.io.Serializable;
+
+public class Request implements Serializable {
+    private String commandName;
+    private Serializable args;
+
+    public Request(String commandName, Serializable args) {
+        this.commandName = commandName;
+        this.args = args;
+    }
+
+    public String getCommandName() {
+        return commandName;
+    }
+
+    public Serializable getArgs() {
+        return args;
+    }
+}
+--------------------------------
+
+Response:
+--------------------------------
+import java.io.Serializable;
+
+public class Response implements Serializable {
+    private boolean success;
+    private String message;
+    private Object data;
+
+    public Response(boolean success, String message, Object data) {
+        this.success = success;
+        this.message = message;
+        this.data = data;
+    }
+
+    public boolean isSuccess() { return success; }
+    public String getMessage() { return message; }
+    public Object getData() { return data; }
+}
+--------------------------------
+
+АРГУМЕНТЫ (DTO — обязательно отдельные классы):
+
+--------------------------------
+public class StringArgument implements Serializable {
+    private String value;
+    public StringArgument(String value) { this.value = value; }
+    public String getValue() { return value; }
+}
+--------------------------------
+
+--------------------------------
+public class IdArgument implements Serializable {
+    private int id;
+    public IdArgument(int id) { this.id = id; }
+    public int getId() { return id; }
+}
+--------------------------------
+
+--------------------------------
+public class WorkerArgument implements Serializable {
+    private Worker worker;
+    public WorkerArgument(Worker worker) { this.worker = worker; }
+    public Worker getWorker() { return worker; }
+}
+--------------------------------
+
+КОМАНДЫ:
+
+Интерфейс:
+--------------------------------
+public interface Command {
+    Response execute(Serializable args);
+}
+--------------------------------
+
+Пример команды:
+--------------------------------
+public class InsertCommand implements Command {
+
+    private WorkersCollection collection;
+
+    public InsertCommand(WorkersCollection collection) {
+        this.collection = collection;
+    }
+
+    @Override
+    public Response execute(Serializable args) {
+        WorkerArgument arg = (WorkerArgument) args;
+        Worker worker = arg.getWorker();
+
+        collection.insertAuto(worker);
+
+        return new Response(true, "Worker added", null);
+    }
+}
+--------------------------------
+
+ВАЖНО:
+- Команды НЕ используют Console
+- Команды НЕ читают ввод
+- Команды только обрабатывают готовые данные
+
+КЛИЕНТ:
+
+Пример формирования запросов:
+
+insert:
+--------------------------------
+Worker worker = inputHelper.inputWorker(...);
+
+Request request = new Request(
+    "insert",
+    new WorkerArgument(worker)
+);
+--------------------------------
+
+filter_contains_name:
+--------------------------------
+String name = console.ask("Введите имя");
+
+Request request = new Request(
+    "filter_contains_name",
+    new StringArgument(name)
+);
+--------------------------------
+
+show:
+--------------------------------
+Request request = new Request("show", null);
+--------------------------------
+
+Отправка:
+--------------------------------
+ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+out.writeObject(request);
+--------------------------------
+
+Получение:
+--------------------------------
+ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
+Response response = (Response) in.readObject();
+
+System.out.println(response.getMessage());
+--------------------------------
+
+СЕРВЕР:
+
+Обработчик:
+--------------------------------
+public class RequestHandler {
+
+    private Map<String, Command> commands;
+
+    public Response handle(Request request) {
+        Command command = commands.get(request.getCommandName());
+
+        if (command == null) {
+            return new Response(false, "Unknown command", null);
+        }
+
+        return command.execute(request.getArgs());
+    }
+}
+--------------------------------
+
+СЕРВЕР СЕТЬ:
+- использовать ServerSocketChannel
+- включить неблокирующий режим (configureBlocking(false))
+- принимать клиентов
+- читать Request
+- отправлять Response
+
+ЛОГИРОВАНИЕ (Log4J2):
+
+Maven зависимость:
+--------------------------------
+<dependency>
+  <groupId>org.apache.logging.log4j</groupId>
+  <artifactId>log4j-core</artifactId>
+  <version>2.22.0</version>
+</dependency>
+--------------------------------
+
+log4j2.xml:
+--------------------------------
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+  <Appenders>
+    <Console name="Console" target="SYSTEM_OUT">
+      <PatternLayout pattern="%d{HH:mm:ss} [%t] %-5level %logger - %msg%n"/>
+    </Console>
+
+    <File name="FileLogger" fileName="server.log">
+      <PatternLayout>
+        <Pattern>%d{yyyy-MM-dd HH:mm:ss} %-5level %msg%n</Pattern>
+      </PatternLayout>
+    </File>
+  </Appenders>
+
+  <Loggers>
+    <Root level="info">
+      <AppenderRef ref="Console"/>
+      <AppenderRef ref="FileLogger"/>
+    </Root>
+  </Loggers>
+</Configuration>
+--------------------------------
+
+Использование логгера:
+--------------------------------
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+public class Server {
+
+    private static final Logger logger = LogManager.getLogger(Server.class);
+
+    public void start() {
+        logger.info("Server started");
+
+        logger.info("New client connected");
+        logger.info("Request received");
+        logger.info("Command executed");
+        logger.info("Response sent");
+    }
+}
+--------------------------------
+
+ЛОГИРОВАТЬ ОБЯЗАТЕЛЬНО:
+- запуск сервера
+- подключение клиента
+- получение запроса
+- выполнение команды
+- отправка ответа
+- ошибки
+
+ОГРАНИЧЕНИЯ:
+
+НЕЛЬЗЯ:
+- передавать строки вместо объектов
+- передавать Command
+- вводить данные на сервере
+
+НУЖНО:
+- передавать только Serializable объекты
+- вся логика выполнения — на сервере
+- ввод — только на клиенте
+
+ИТОГ:
+Клиент формирует Request → отправляет → сервер выполняет команду → возвращает Response → клиент выводит результат, все этапы логируются через Log4J2.

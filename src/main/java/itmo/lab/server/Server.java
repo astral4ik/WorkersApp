@@ -1,14 +1,14 @@
-package itmo.lab;
+package itmo.lab.server;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import itmo.lab.common.Request;
 import itmo.lab.common.Response;
-import itmo.lab.storage.CollectionStorage;
-import itmo.lab.storage.DataAccessException;
-import itmo.lab.storage.XmlFileStorage;
-import itmo.lab.client.Client;
+import itmo.lab.server.storage.CollectionStorage;
+import itmo.lab.server.storage.DataAccessException;
+import itmo.lab.server.storage.XmlFileStorage;
+import itmo.lab.WorkersCollection;
 
 import java.io.*;
 import java.nio.ByteBuffer;
