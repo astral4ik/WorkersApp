@@ -1,0 +1,1 @@
+packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html","k":"18"},{"l":"itmo.lab"},{"l":"itmo.lab.client"},{"l":"itmo.lab.client.commands"},{"l":"itmo.lab.common"},{"l":"itmo.lab.data"},{"l":"itmo.lab.server"},{"l":"itmo.lab.server.commands"},{"l":"itmo.lab.server.storage"}];updateSearchResults();
