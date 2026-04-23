@@ -1,10 +1,11 @@
-package itmo.lab;
+package itmo.lab.server;
 
 import itmo.lab.server.commands.ServerCommand;
 import itmo.lab.server.commands.*;
-import itmo.lab.storage.CollectionStorage;
-import itmo.lab.storage.DataAccessException;
+import itmo.lab.server.storage.CollectionStorage;
+import itmo.lab.server.storage.DataAccessException;
 import itmo.lab.common.Response;
+import itmo.lab.WorkersCollection;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -1,4 +1,4 @@
-package itmo.lab.storage;
+package itmo.lab.server.storage;
 
 /**
  * Исключение при ошибках доступа к данным.

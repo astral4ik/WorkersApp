@@ -1,7 +1,7 @@
 package itmo.lab.server.commands;
 
 import itmo.lab.common.Response;
-import itmo.lab.storage.CollectionStorage;
+import itmo.lab.server.storage.CollectionStorage;
 import itmo.lab.WorkersCollection;
 
 import java.io.Serializable;
