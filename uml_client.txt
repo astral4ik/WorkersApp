@@ -1,0 +1,162 @@
+classDiagram
+    direction TB
+
+    class App {
+        +main(args: String[])
+    }
+
+    class Client {
+        - socket: SocketChannel
+        - console: ClientConsole
+        - buffer: ByteBuffer
+        - commandManager: CommandManager
+        + run()
+        + connect()
+        + sendRequest(request): Response
+    }
+
+    class ClientConsole {
+        - scanner: Scanner
+        - editors: ClientEditors
+        - inputs: ClientInputs
+        + getInputs(): ClientInputs
+        + printLine(message)
+        + print(message)
+        + inputWorker()
+        + editWorker(existing)
+        + printWorkersList(workers)
+    }
+
+    class ClientInputs {
+        - scanner: Scanner
+        - console: ClientConsole
+        + ask(prompt): String
+        + askInt(prompt): int
+        + askFloat(prompt): float
+        + askLong(prompt): long
+        + askLocalDateTime(prompt): LocalDateTime
+        + askValidString(prompt, error): String
+        + askNonEmptyString(prompt, error): String
+        + containsInvalidChars(input): boolean
+    }
+
+    class ClientEditors {
+        - scanner: Scanner
+        + editString(field, current): String
+        + editInt(field, current, validator): Integer
+        + editFloat(field, current): Float
+        + editLocalDateTime(field, current): LocalDateTime
+        + editEnum(enumClass, current): T
+        + editNullableEnum(enumClass, current): T
+    }
+
+    class CommandManager {
+        - commands: Map~String, ClientCommand~
+        + get(commandName): ClientCommand
+    }
+
+    class RetryBackoff {
+        + run(operation)
+    }
+
+    class ClientCommand {
+        <<interface>>
+        + execute(args)
+    }
+
+    class Request {
+        - commandName: String
+        - args: Serializable
+    }
+
+    class Response {
+        - success: boolean
+        - message: String
+        - data: Object
+        + isSuccess(): boolean
+        + getMessage(): String
+        + getData(): Object
+    }
+
+    class IdArgument
+    class StringArgument
+    class WorkerArgument
+    class Serializable
+
+    class InsertClient
+    class UpdateClient
+    class RemoveKeyClient
+    class RemoveLowerClient
+    class RemoveGreaterKeyClient
+    class ClearClient
+    class ShowClient
+    class InfoClient
+    class FilterContainsNameClient
+    class CountLessThanStartDateClient
+    class PrintUniqueStartDateClient
+    class ReplaceIfLowerClient
+    class HelpClient
+
+    App --> Client
+
+    Client *-- ClientConsole
+    Client *-- CommandManager
+    Client *-- RetryBackoff
+
+    ClientConsole *-- ClientInputs
+    ClientConsole *-- ClientEditors
+
+    CommandManager o-- ClientCommand
+
+    ClientCommand <|.. InsertClient
+    ClientCommand <|.. UpdateClient
+    ClientCommand <|.. RemoveKeyClient
+    ClientCommand <|.. RemoveLowerClient
+    ClientCommand <|.. RemoveGreaterKeyClient
+    ClientCommand <|.. ClearClient
+    ClientCommand <|.. ShowClient
+    ClientCommand <|.. InfoClient
+    ClientCommand <|.. FilterContainsNameClient
+    ClientCommand <|.. CountLessThanStartDateClient
+    ClientCommand <|.. PrintUniqueStartDateClient
+    ClientCommand <|.. ReplaceIfLowerClient
+    ClientCommand <|.. HelpClient
+
+    InsertClient --> Client
+    UpdateClient --> Client
+    RemoveKeyClient --> Client
+    ShowClient --> Client
+
+    InsertClient --> ClientConsole
+    UpdateClient --> ClientConsole
+    RemoveKeyClient --> ClientConsole
+    FilterContainsNameClient --> ClientConsole
+    CountLessThanStartDateClient --> ClientConsole
+    ReplaceIfLowerClient --> ClientConsole
+    HelpClient --> ClientConsole
+
+    InsertClient ..> Request
+    UpdateClient ..> Request
+    RemoveKeyClient ..> Request
+    RemoveLowerClient ..> Request
+    RemoveGreaterKeyClient ..> Request
+    ClearClient ..> Request
+    ShowClient ..> Request
+    InfoClient ..> Request
+    HelpClient ..> Request
+    FilterContainsNameClient ..> Request
+    CountLessThanStartDateClient ..> Request
+    PrintUniqueStartDateClient ..> Request
+    ReplaceIfLowerClient ..> Request
+
+    InsertClient ..> WorkerArgument
+    UpdateClient ..> WorkerArgument
+    RemoveKeyClient ..> IdArgument
+    RemoveLowerClient ..> IdArgument
+    RemoveGreaterKeyClient ..> IdArgument
+    FilterContainsNameClient ..> StringArgument
+    CountLessThanStartDateClient ..> StringArgument
+
+    Request --> Response
+    Response ..> Worker
+    Response ..> List~Worker~
