@@ -1,0 +1,298 @@
+classDiagram
+    direction TB
+
+    class App {
+        +main(args: String[])
+    }
+
+    class Server {
+        - collection: WorkersCollection
+        - storage: CollectionStorage
+        - requestHandler: RequestHandler
+        + start()
+    }
+
+    class WorkersCollection {
+        - workers: TreeMap
+        - creationTime: LocalDateTime
+        - fileName: String
+        + insert(element)
+        + insert(id, element)
+        + update(id, worker)
+        + remove(id)
+        + removeLower(id)
+        + removeGreaterKey(id)
+        + get(id)
+        + getAll()
+        + generateId()
+    }
+
+    class RequestHandler {
+        - commands: Map~String, ServerCommand~
+        - collection: WorkersCollection
+        - storage: CollectionStorage
+        + handle(request): Response
+    }
+
+    class CollectionStorage {
+        <<interface>>
+        + load(): WorkersCollection
+        + save(collection)
+    }
+
+    class XmlFileStorage {
+        - filePath: String
+        - xmlMapper: XmlMapper
+        + load()
+        + save(collection)
+    }
+
+    class Worker {
+        - id: int
+        - name: String
+        - coordinates: Coordinates
+        - creationDate: LocalDateTime
+        - salary: int
+        - startDate: LocalDateTime
+        - position: Position
+        - status: Status
+        - organization: Organization
+    }
+
+    class Coordinates {
+        - x: int
+        - y: float
+    }
+
+    class Organization {
+        - fullName: String
+        - annualTurnover: Integer
+        - address: Address
+        - employeesCount: int
+    }
+
+    class Address {
+        - street: String
+        - town: Location
+    }
+
+    class Location {
+        - x: long
+        - y: Integer
+        - z: Integer
+    }
+
+    class Position {
+        <<enumeration>>
+        HUMAN_RESOURCES
+        SPECIALIST
+        BAKER
+        CLEANER
+        MANAGER
+        LABORER
+    }
+
+    class Status {
+        <<enumeration>>
+        FIRED
+        HIRED
+        RECOMMENDED_FOR_PROMOTION
+        REGULAR
+        PROBATION
+    }
+
+    class Client {
+        - socket: SocketChannel
+        - console: ClientConsole
+        - buffer: ByteBuffer
+        - commandManager: CommandManager
+        + run()
+        + connect()
+        + sendRequest(request): Response
+    }
+
+    class ClientConsole {
+        - scanner: Scanner
+        - editors: ClientEditors
+        - inputs: ClientInputs
+        + getInputs(): ClientInputs
+        + printLine(message)
+        + print(message)
+        + ask(prompt)
+        + askInt(prompt)
+        + askFloat(prompt)
+        + askLocalDateTime(prompt)
+        + askValidString(prompt)
+        + inputWorker()
+        + editWorker(existing)
+        + printWorkersList(workers)
+    }
+
+    class ClientInputs {
+        - scanner: Scanner
+        - console: ClientConsole
+        + ask(prompt): String
+        + askInt(prompt): int
+        + askFloat(prompt): float
+        + askLong(prompt): long
+        + askLocalDateTime(prompt): LocalDateTime
+        + askValidString(prompt, error): String
+        + askNonEmptyString(prompt, error): String
+        + containsInvalidChars(input): boolean
+    }
+
+    class ClientEditors {
+        - scanner: Scanner
+        + editString(field, current): String
+        + editInt(field, current, validator): Integer
+        + editFloat(field, current): Float
+        + editLocalDateTime(field, current): LocalDateTime
+        + editEnum(enumClass, current): T
+        + editNullableEnum(enumClass, current): T
+    }
+
+    class CommandManager {
+        - commands: Map~String, ClientCommand~
+        + get(commandName): ClientCommand
+    }
+
+    class RetryBackoff {
+        + run(operation)
+    }
+
+    class ServerCommand {
+        <<interface>>
+        + execute(args): Response
+        + isModifying(): boolean
+    }
+
+    class ClientCommand {
+        <<interface>>
+        + execute(args)
+    }
+
+    class Request {
+        - commandName: String
+        - args: Serializable
+    }
+
+    class Response {
+        - success: boolean
+        - message: String
+        - data: Object
+        + isSuccess(): boolean
+        + getMessage(): String
+        + getData(): Object
+    }
+
+    class IdArgument
+    class StringArgument
+    class WorkerArgument
+
+    class InsertCommand {server}
+    class UpdateCommand {server}
+    class GetWorkerCommand {server}
+    class RemoveKeyCommand {server}
+    class RemoveLowerCommand {server}
+    class RemoveGreaterKeyCommand {server}
+    class ClearCommand {server}
+    class ShowCommand {server}
+    class InfoCommand {server}
+    class SaveCommand {server}
+    class FilterContainsNameCommand {server}
+    class CountLessThanStartDateCommand {server}
+    class PrintUniqueStartDateCommand {server}
+    class ReplaceIfLowerCommand {server}
+
+    class InsertCommand {client}
+    class UpdateCommand {client}
+    class RemoveKeyCommand {client}
+    class RemoveLowerCommand {client}
+    class RemoveGreaterKeyCommand {client}
+    class ClearCommand {client}
+    class ShowCommand {client}
+    class InfoCommand {client}
+    class FilterContainsNameCommand {client}
+    class CountLessThanStartDateCommand {client}
+    class PrintUniqueStartDateCommand {client}
+    class ReplaceIfLowerCommand {client}
+    class HelpCommand {client}
+
+    App ..> Server : "server"
+    App ..> Client : "client"
+
+    Server *-- WorkersCollection
+    Server *-- RequestHandler
+    Server o-- CollectionStorage
+
+    RequestHandler o-- ServerCommand
+
+    WorkersCollection o-- "0..*" Worker
+
+    Worker *-- Coordinates
+    Worker *-- Organization
+    Worker --> Position
+    Worker --> Status
+
+    Organization *-- Address
+    Address *-- Location
+
+    XmlFileStorage ..|> CollectionStorage
+
+    Client *-- ClientConsole
+    Client *-- CommandManager
+    Client *-- RetryBackoff
+
+    ClientConsole *-- ClientInputs
+    ClientConsole *-- ClientEditors
+
+    CommandManager o-- ClientCommand
+
+    ClientCommand <|.. InsertCommand {client}
+    ClientCommand <|.. UpdateCommand {client}
+    ClientCommand <|.. RemoveKeyCommand {client}
+    ClientCommand <|.. RemoveLowerCommand {client}
+    ClientCommand <|.. RemoveGreaterKeyCommand {client}
+    ClientCommand <|.. ClearCommand {client}
+    ClientCommand <|.. ShowCommand {client}
+    ClientCommand <|.. InfoCommand {client}
+    ClientCommand <|.. FilterContainsNameCommand {client}
+    ClientCommand <|.. CountLessThanStartDateCommand {client}
+    ClientCommand <|.. PrintUniqueStartDateCommand {client}
+    ClientCommand <|.. ReplaceIfLowerCommand {client}
+    ClientCommand <|.. HelpCommand {client}
+
+    InsertCommand {client} --> Client
+    UpdateCommand {client} --> Client
+    RemoveKeyCommand {client} --> Client
+    ShowCommand {client} --> Client
+
+    InsertCommand {client} --> ClientConsole
+    UpdateCommand {client} --> ClientConsole
+
+    ServerCommand <|.. InsertCommand {server}
+    ServerCommand <|.. UpdateCommand {server}
+    ServerCommand <|.. GetWorkerCommand {server}
+    ServerCommand <|.. RemoveKeyCommand {server}
+    ServerCommand <|.. RemoveLowerCommand {server}
+    ServerCommand <|.. RemoveGreaterKeyCommand {server}
+    ServerCommand <|.. ClearCommand {server}
+    ServerCommand <|.. ShowCommand {server}
+    ServerCommand <|.. InfoCommand {server}
+    ServerCommand <|.. SaveCommand {server}
+    ServerCommand <|.. FilterContainsNameCommand {server}
+    ServerCommand <|.. CountLessThanStartDateCommand {server}
+    ServerCommand <|.. PrintUniqueStartDateCommand {server}
+    ServerCommand <|.. ReplaceIfLowerCommand {server}
+
+    InsertCommand {server} --> WorkersCollection
+    UpdateCommand {server} --> WorkersCollection
+    GetWorkerCommand {server} --> WorkersCollection
+    RemoveKeyCommand {server} --> WorkersCollection
+    ShowCommand {server} --> WorkersCollection
+
+    Request --> RequestHandler
+    Response <.. RequestHandler
+
+    Response ..> Worker
+    Response ..> List~Worker~

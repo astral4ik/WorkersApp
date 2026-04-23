@@ -1,0 +1,8 @@
+project_structure/
+server.log
+.opencode/
+lab*/
+target/
+*.class
+workers.xml
+*.iml
