@@ -16,7 +16,6 @@ import java.nio.channels.*;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.Iterator;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Сервер для обработки запросов клиентов.
@@ -38,8 +37,6 @@ public class Server {
 
     private Selector selector;
     private ServerSocketChannel serverChannel;
-
-    private final ConcurrentHashMap<SocketChannel, ByteBuffer> buffers = new ConcurrentHashMap<>();
 
     public Server() {
         this("workers.xml");
@@ -119,18 +116,18 @@ public class Server {
         client.register(selector, SelectionKey.OP_READ);
 
         ByteBuffer buffer = ByteBuffer.allocate(BUFFER_SIZE);
-        buffers.put(client, buffer);
+        key.attach(buffer);
 
         logger.info("Подключился новый клиент: " + client.getRemoteAddress());
     }
 
     private void handleRead(SelectionKey key) throws IOException {
         SocketChannel client = (SocketChannel) key.channel();
-        ByteBuffer buffer = buffers.get(client);
+        ByteBuffer buffer = (ByteBuffer) key.attachment();
 
         if (buffer == null) {
             buffer = ByteBuffer.allocate(BUFFER_SIZE);
-            buffers.put(client, buffer);
+            key.attach(buffer);
         }
 
         buffer.clear();
@@ -140,13 +137,13 @@ public class Server {
             read = client.read(buffer);
         } catch (IOException e) {
             logger.error("Ошибка чтения от клиента: " + e.getMessage());
-            closeClient(client, key);
+            closeClient(key);
             return;
         }
 
         if (read == -1) {
             logger.info("Клиент отключился");
-            closeClient(client, key);
+            closeClient(key);
             return;
         }
 
@@ -159,14 +156,14 @@ public class Server {
             } catch (Exception e) {
                 logger.error("Ошибка десериализации: буфер=" + buffer.remaining() + " байт, исключение: " + e.getMessage());
                 e.printStackTrace();
-                closeClient(client, key);
+                closeClient(key);
                 return;
             }
             logger.info("Получен запрос: " + request.getCommandName());
 
             if (request.getCommandName().equals("exit")) {
                 logger.info("Клиент запросил выход");
-                closeClient(client, key);
+                closeClient(key);
                 return;
             }
 
@@ -182,7 +179,7 @@ public class Server {
             try {
                 ByteBuffer responseBuffer = serialize(response);
                 logger.info("Ответ сериализован, размер: " + responseBuffer.remaining() + " байт");
-                buffers.put(client, responseBuffer);
+                key.attach(responseBuffer);
                 key.interestOps(SelectionKey.OP_WRITE);
             } catch (Exception e) {
                 logger.error("Ошибка сериализации ответа: " + e.getMessage());
@@ -192,7 +189,7 @@ public class Server {
 
     private void handleWrite(SelectionKey key) throws IOException {
         SocketChannel client = (SocketChannel) key.channel();
-        ByteBuffer buffer = buffers.get(client);
+        ByteBuffer buffer = (ByteBuffer) key.attachment();
 
         if (buffer == null) {
             logger.error("Буфер для отправки отсутствует");
@@ -211,21 +208,19 @@ public class Server {
         logger.info("Отправлено " + totalWritten + " байт клиенту");
 
         if (!buffer.hasRemaining()) {
-            buffers.remove(client);
             ByteBuffer newBuffer = ByteBuffer.allocate(BUFFER_SIZE);
-            buffers.put(client, newBuffer);
+            key.attach(newBuffer);
             key.interestOps(SelectionKey.OP_READ);
         } else {
             buffer.compact();
-            buffers.put(client, buffer);
+            key.attach(buffer);
         }
     }
 
-    private void closeClient(SocketChannel client, SelectionKey key) {
+    private void closeClient(SelectionKey key) {
         try {
-            buffers.remove(client);
             key.cancel();
-            client.close();
+            key.channel().close();
             logger.info("Соединение с клиентом закрыто");
         } catch (IOException e) {
             logger.error("Ошибка при закрытии: " + e.getMessage());
