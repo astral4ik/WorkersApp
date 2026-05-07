@@ -92,19 +92,18 @@ public class Client {
      * @return {@code true}, если аутентификация прошла успешно
      */
     private boolean handleAuth() {
-        console.printLine("\n═══════════════════════════════════");
-        console.printLine("           АВТОРИЗАЦИЯ");
-        console.printLine("═══════════════════════════════════");
-        console.printLine("1. Login (вход)");
-        console.printLine("2. Register (регистрация)");
+        console.printAuth();
 
         String choice = console.ask("Выберите: ").trim();
 
-        console.print("Login: ");
-        String login = console.ask("").trim();
+        if (!"1".equals(choice) && !"2".equals(choice)) {
+            console.printLine("Неверный выбор. Введите '1' для входа или '2' для регистрации.");
+            return false;
+        }
 
-        console.print("Password: ");
-        String password = console.ask("").trim();
+        String login = console.ask("Login: ").trim();
+
+        String password = console.ask("Password: ").trim();
 
         if (login.isEmpty() || password.isEmpty()) {
             console.printLine("Login и password не могут быть пустыми.");
@@ -117,13 +116,15 @@ public class Client {
             if (!resp.isSuccess()) {
                 return false;
             }
-        }
-
+        } 
         Response resp = sendRequest(new Request("login", null, login, password));
         if (!resp.isSuccess()) {
             console.printLine(resp.getMessage());
             return false;
-        }
+         }    
+
+
+        
 
         currentLogin = login;
         currentPassword = password;

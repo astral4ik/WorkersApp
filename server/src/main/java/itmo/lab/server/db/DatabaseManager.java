@@ -21,8 +21,7 @@ public class DatabaseManager {
     public static void init(String dbUser, String dbPassword) {
         user = dbUser;
         password = dbPassword;
-        // url = "jdbc:postgresql://localhost:5432/studs";
-        url = "jdbc:postgresql://pg:5432/studs";
+        url = "jdbc:postgresql://localhost:5432/studs";
     }
 
     /**
