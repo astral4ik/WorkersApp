@@ -549,4 +549,12 @@ public class ClientConsole {
      */
     public void close() {
     }
+
+    public void printAuth() {
+        printLine("═══════════════════════════════════");
+        printLine("           АВТОРИЗАЦИЯ");
+        printLine("═══════════════════════════════════");
+        printLine("1. Login (вход)");
+        printLine("2. Register (регистрация)");
+    }
 }
