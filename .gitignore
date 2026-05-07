@@ -1,12 +1,11 @@
 project_structure/
 server.log
-.opencode/
 lab*/
 target/
 *.class
 workers.xml
 *.iml
-uml_server.txt
-uml_client.txt
-uml_worker.txt
 script.txt
+server.log
+.vscode
+.DS_Store
