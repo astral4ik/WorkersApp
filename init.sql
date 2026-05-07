@@ -1,25 +1,19 @@
--- init.sql - Скрипт инициализации базы данных для лабораторной работы №7
-
--- Последовательность для генерации ID работников
 CREATE SEQUENCE IF NOT EXISTS workers_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MAXVALUE;
 
--- Последовательность для генерации ID организаций
 CREATE SEQUENCE IF NOT EXISTS organizations_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MAXVALUE;
 
--- Таблица пользователей
 CREATE TABLE IF NOT EXISTS users (
     id       SERIAL PRIMARY KEY,
     login    VARCHAR(100) UNIQUE NOT NULL,
-    password VARCHAR(128) NOT NULL  -- SHA-512 = 128 hex символов
+    password VARCHAR(128) NOT NULL 
 );
 
--- Таблица организаций
 CREATE TABLE IF NOT EXISTS organizations (
     id              BIGINT PRIMARY KEY DEFAULT nextval('organizations_id_seq'),
     full_name       VARCHAR(255) UNIQUE,
@@ -32,7 +26,6 @@ CREATE TABLE IF NOT EXISTS organizations (
     CHECK (loc_x IS NULL OR (loc_y IS NOT NULL AND loc_z IS NOT NULL))
 );
 
--- Таблица работников
 CREATE TABLE IF NOT EXISTS workers (
     id              BIGINT PRIMARY KEY DEFAULT nextval('workers_id_seq'),
     name            VARCHAR(255) NOT NULL,
@@ -42,7 +35,7 @@ CREATE TABLE IF NOT EXISTS workers (
     salary          INTEGER NOT NULL CHECK (salary > 0),
     start_date      TIMESTAMP NOT NULL,
     position        VARCHAR(50) NOT NULL,
-    status          VARCHAR(50),           -- enum Status (может быть null)
+    status          VARCHAR(50),           
     organization_id BIGINT REFERENCES organizations(id) ON DELETE SET NULL,
     owner_login     VARCHAR(100) NOT NULL REFERENCES users(login)
 );
