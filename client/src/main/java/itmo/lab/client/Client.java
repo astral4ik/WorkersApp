@@ -166,6 +166,31 @@ public class Client {
     }
 
     /**
+     * Пытается восстановить соединение с сервером.
+     *
+     * @return {@code true}, если переподключение прошло успешно
+     */
+    private boolean reconnect() {
+        console.printLine("Попытка переподключения...");
+        try {
+            if (socket != null && !socket.isClosed()) socket.close();
+        } catch (IOException ignored) {}
+
+        for (int attempt = 1; attempt <= 3; attempt++) {
+            try {
+                Thread.sleep(2000L * attempt);
+                connect();
+                console.printLine("Переподключено успешно.");
+                return true;
+            } catch (IOException | InterruptedException e) {
+                console.printLine("Попытка " + attempt + " неудачна: " + e.getMessage());
+            }
+        }
+        console.printLine("Не удалось восстановить соединение.");
+        return false;
+    }
+
+    /**
      * Отправляет запрос на сервер и возвращает ответ.
      *
      * @param request запрос для отправки
@@ -175,12 +200,18 @@ public class Client {
         try {
             out.writeObject(request);
             out.flush();
-
-            Response response = (Response) in.readObject();
-            return response;
-
+            return (Response) in.readObject();
         } catch (IOException | ClassNotFoundException e) {
             console.printLine("Ошибка связи с сервером: " + e.getMessage());
+            if (reconnect()) {
+                try {
+                    out.writeObject(request);
+                    out.flush();
+                    return (Response) in.readObject();
+                } catch (IOException | ClassNotFoundException ex) {
+                    console.printLine("Ошибка после переподключения: " + ex.getMessage());
+                }
+            }
             return null;
         }
     }
