@@ -1,6 +1,5 @@
 project_structure/
 server.log
-lab*/
 target/
 *.class
 workers.xml
